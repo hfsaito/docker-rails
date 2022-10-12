@@ -1,0 +1,35 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:14
+    environment:
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    volumes:
+      - ./db/postgresql/data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d app_development -U postgres"]
+      start_period: 0s
+      interval: 5s
+      timeout: 5s
+      retries: 3
+    ports:
+      - 127.0.0.1:5433:5432
+    networks:
+      default:
+        aliases:
+          - db
+  app:
+    build:
+      context: .
+    volumes:
+      - '.:/usr/src/app:cached'
+    depends_on:
+      db: 
+        condition: service_healthy
+    ports:
+      - 3000:3000
+    networks:
+      default:
+        aliases:
+          - app
+    command: rails server -b 0.0.0.0
